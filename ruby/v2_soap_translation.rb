@@ -1,48 +1,8 @@
 require 'sinatra'
+require 'json'
+require 'uri'
 
 set :port, 8000
-
-def traducir_ingles_a_espanol(texto_en)
-  termino = texto_en.downcase.strip
-  
-  diccionario = {
-    "zero" => "cero", "one" => "uno", "two" => "dos", "three" => "tres", "four" => "cuatro",
-    "five" => "cinco", "six" => "seis", "seven" => "siete", "eight" => "ocho", "nine" => "nueve",
-    "ten" => "diez", "eleven" => "once", "twelve" => "doce", "thirteen" => "trece",
-    "fourteen" => "catorce", "fifteen" => "quince", "sixteen" => "dieciséis",
-    "seventeen" => "diecisiete", "eighteen" => "dieciocho", "nineteen" => "diecinueve",
-    "twenty" => "veinte", "thirty" => "treinta", "forty" => "cuarenta", "fifty" => "cincuenta",
-    "sixty" => "sesenta", "seventy" => "setenta", "eighty" => "ochenta", "ninety" => "noventa",
-    "hundred" => "cien", "thousand" => "mil", "million" => "millón"
-  }
-
-  return diccionario[termino] if diccionario.key?(termino)
-
-  palabras = termino.gsub("-", " ").split(" ")
-  palabras_traducidas = palabras.map do |palabra|
-    if diccionario.key?(palabra)
-      diccionario[palabra]
-    elsif palabra == "and"
-      "y"
-    else
-      palabra
-    end
-  end
-
-  resultado = palabras_traducidas.join(" ")
-  resultado.gsub!("veinte uno", "veintiuno")
-  resultado.gsub!("veinte dos", "veintidos")
-  resultado.gsub!("veinte tres", "veintitres")
-  resultado.gsub!("veinte cuatro", "veinticuatro")
-  resultado.gsub!("veinte cinco", "veinticinco")
-  resultado.gsub!("veinte seis", "veintiseis")
-  resultado.gsub!("veinte siete", "veintisiete")
-  resultado.gsub!("veinte ocho", "veintiocho")
-  resultado.gsub!("veinte nueve", "veintinueve")
-  resultado.gsub!("veinte y", "veinti")
-  
-  resultado
-end
 
 get '/v2_soap_translation.rb' do
   number = params['n'] || '0'
@@ -58,12 +18,25 @@ get '/v2_soap_translation.rb' do
 </soap:Envelope>
   XML
 
-  url = "https://www.dataaccess.com/webservicesserver/NumberConversion.wso"
-  response = `curl -s -X POST -H "Content-Type: text/xml; charset=utf-8" -d '#{xml_payload}' #{url}`
+  wsdl_url = "https://www.dataaccess.com/webservicesserver/NumberConversion.wso?WSDL"
+  endpoint_url = wsdl_url.gsub("?WSDL", "")
+  
+  soap_response = `curl -s -X POST -H "Content-Type: text/xml; charset=utf-8" -d '#{xml_payload}' #{endpoint_url}`
 
-  if response =~ /<m:NumberToWordsResult>(.*?)<\/m:NumberToWordsResult>/m
+  if soap_response =~ /<m:NumberToWordsResult>(.*?)<\/m:NumberToWordsResult>/m
     ingles_words = $1.strip
-    traducir_ingles_a_espanol(ingles_words)
+    
+    palabra_codificada = URI.encode_www_form_component(ingles_words)
+    translate_url = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=es&dt=t&q=#{palabra_codificada}"
+    
+    api_response = `curl -s "#{translate_url}"`
+    
+    begin
+      datos = JSON.parse(api_response)
+      datos[0][0][0].downcase
+    rescue
+      "Error al procesar la libreria de traduccion JSON."
+    end
   else
     "Error: No se recibió la estructura esperada del servidor web."
   end
