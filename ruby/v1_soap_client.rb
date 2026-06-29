@@ -16,9 +16,10 @@ get '/v1_soap_client.rb' do
 </soap:Envelope>
   XML
 
-  url = "https://www.dataaccess.com/webservicesserver/NumberConversion.wso"
+  wsdl_url = "https://www.dataaccess.com/webservicesserver/NumberConversion.wso?WSDL"
+  endpoint_url = wsdl_url.gsub("?WSDL", "")
   
-  response = `curl -s -X POST -H "Content-Type: text/xml; charset=utf-8" -d '#{xml_payload}' #{url}`
+  response = `curl -s -X POST -H "Content-Type: text/xml; charset=utf-8" -d '#{xml_payload}' #{endpoint_url}`
 
   if response =~ /<m:NumberToWordsResult>(.*?)<\/m:NumberToWordsResult>/m
     $1.strip
