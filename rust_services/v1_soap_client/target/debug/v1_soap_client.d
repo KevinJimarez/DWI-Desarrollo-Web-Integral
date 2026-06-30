@@ -1,1 +1,0 @@
-/Applications/XAMPP/xamppfiles/DWI-Desarrollo-Web-Integral/rust_services/v1_soap_client/target/debug/v1_soap_client: /Applications/XAMPP/xamppfiles/DWI-Desarrollo-Web-Integral/rust_services/v1_soap_client/src/main.rs
