@@ -1,0 +1,8 @@
+[package]
+name = "v1_soap_client"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tiny_http = "0.12"
+regex = "1.10"
